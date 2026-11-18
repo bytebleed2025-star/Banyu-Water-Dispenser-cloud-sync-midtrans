@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Banyu dashboard</title>
+<link rel="icon" href="/banyu-logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#3368A0;--ink:#1F3547;--teal:#66A3BF;--mint:#C8DFDB;--cream:#F4F8FB;--bg:#fff;--muted:#6C889A;--line:#E1EAF0;--danger:#C24B4B;--ok:#4C8B6B;--warn:#B7791F}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:15px/1.5 "Plus Jakarta Sans",system-ui,sans-serif}
+h1,h2{font-family:Fredoka,system-ui,sans-serif;font-weight:600;margin:0}
+.wrap{max-width:1200px;margin:0 auto;padding:20px 20px 48px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+h1{font-size:26px}.modes{color:var(--muted);font-size:13px}.modes b{color:var(--ink)}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+button,.btn{font:inherit;font-weight:500;border:1.5px solid var(--navy);background:transparent;color:var(--navy);padding:7px 14px;border-radius:999px;cursor:pointer;text-decoration:none}
+button:hover,.btn:hover{background:var(--navy);color:#fff}button:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.sample{border-color:var(--muted);color:var(--muted)}
+.banner{background:#FFF6E0;border:1px solid #F0D58C;color:#6B4E00;border-radius:14px;padding:12px 16px;margin-bottom:14px;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));background:var(--bg);border:1px solid var(--line);border-radius:18px}
+.stat{padding:16px 20px;border-right:1px solid var(--line)}.stat:last-child{border:0}
+.stat .n{font:600 30px Fredoka,sans-serif;line-height:1.1}.stat .l{color:var(--muted);font-size:13px}
+.stat.warn .n{color:var(--danger)}
+.cols{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:18px;margin-top:18px}
+@media(max-width:860px){.cols{grid-template-columns:1fr}}
+.panel{background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:18px}
+.panel h2{font-size:18px;margin-bottom:12px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{padding:4px 12px;font-size:13px;border-color:var(--line);color:var(--muted)}
+.tabs button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--muted);font-weight:500;font-size:13px;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:500;background:var(--line);color:var(--muted)}
+.completed{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.stopped{background:color-mix(in srgb,var(--danger) 16%,transparent);color:var(--danger)}
+.dispensing,.paid{background:color-mix(in srgb,var(--navy) 18%,transparent);color:var(--navy)}
+tr.attn td:first-child{box-shadow:inset 3px 0 var(--danger)}
+.tag{font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:0 5px;margin-left:6px}
+.bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px}.bar i{display:block;height:10px;border-radius:5px;background:var(--teal);min-width:2px}
+.bar span:first-child{width:78px;color:var(--muted)}
+.alert{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.alert small{color:var(--muted);display:block}.empty{color:var(--muted);padding:14px 0}
+h2+.alert,.panel+.panel{margin-top:0}.side{display:grid;gap:18px;align-content:start}
+.logo{display:flex;align-items:center;gap:12px}.logo img{height:44px;width:auto;display:block}.logo h1{font-size:20px;color:var(--muted);font-weight:500}
+.cold .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cold .lvl{font:600 26px Fredoka,sans-serif;line-height:1.1}
+.badge{display:inline-block;padding:3px 12px;border-radius:999px;font-size:13px;font-weight:700}
+.b-cold{background:color-mix(in srgb,var(--navy) 18%,transparent);color:var(--navy)}.b-cool{background:color-mix(in srgb,var(--teal) 28%,transparent);color:#2F6E8C}.b-disabled{background:var(--line);color:var(--muted)}
+.gauge{position:relative;height:14px;border-radius:7px;background:var(--line);margin:14px 0 6px}.gauge i{position:absolute;left:0;top:0;bottom:0;border-radius:7px;background:var(--teal);transition:width .4s}
+.gauge.cold i{background:var(--navy)}.gauge.disabled i{background:#9DB0BD}.gauge u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.35}
+.scale{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}.note{color:var(--muted);font-size:13px;margin-top:8px}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}.seg button{padding:4px 12px;font-size:13px}.seg button.on{background:var(--navy);color:#fff}
+.sub{font-size:12px;color:var(--muted);margin-top:12px}.sub+.seg{margin-top:6px}
+
+</style></head><body><div class="wrap">
+<header><div><div class="logo"><img src="/banyu-logo.png" alt="Banyu"><h1>Dashboard</h1></div><div class="modes" id="modes">&nbsp;</div></div>
+<div class="tools"><button class="sample" id="seed">Add sample data</button><button class="sample" id="clear">Clear sample data</button><a class="btn" href="/api/orders.csv">Download CSV</a><button id="logout">Log out</button></div></header>
+<div class="banner" id="banner" hidden></div>
+<section class="stats" id="stats"></section>
+<div class="cols">
+ <section class="panel"><h2>Orders</h2><div class="tabs" id="tabs"></div><div class="scroll"><table><thead><tr><th>Order</th><th>Time</th><th class="num">Ordered</th><th>Temp</th><th class="num">Dispensed</th><th class="num">Price</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></div><div class="empty" id="empty" hidden></div></section>
+ <div class="side"><section class="panel cold" id="coldPanel"><h2>Cold water</h2><div id="cold"><div class="empty">Loading\u2026</div></div></section>
+ <section class="panel"><h2>Water alerts</h2><div id="alerts"></div></section>
+ <section class="panel" id="connPanel" hidden><h2>Dispenser connection</h2><div id="conn"></div></section>
+ <section class="panel"><h2>Paid orders today</h2><div id="mix"></div></section></div>
+</div></div>
+<script>
+var CLOUD=false;   // true when this page is served by the online (Vercel) copy: read-only machine controls
+var TABS=[["","All"],["completed","Completed"],["stopped","Stopped early"],["attention","Needs attention"],["awaiting_payment","Unpaid"]],tab="";
+var LABEL={awaiting_payment:"Awaiting payment",paid:"Paid",dispensing:"Dispensing",completed:"Completed",stopped:"Stopped early",expired:"Expired",cancelled:"Cancelled"};
+var $=function(i){return document.getElementById(i)},rp=function(n){return"Rp"+n.toLocaleString("id-ID")},esc=function(t){return String(t).replace(/[&<>"]/g,function(c){return"&#"+c.charCodeAt(0)+";"})};
+var fmt=function(d){return new Date(d).toLocaleString("en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})};
+function api(u,m,body){return fetch(u,{method:m||"GET",headers:body?{"Content-Type":"application/json"}:undefined,body:body?JSON.stringify(body):undefined}).then(function(r){if(r.status===401){location.replace("/login.html");return new Promise(function(){})}return r.json()})}
+function drawTabs(){$("tabs").innerHTML=TABS.map(function(t){return'<button class="'+(t[0]===tab?"on":"")+'" data-t="'+t[0]+'">'+t[1]+"</button>"}).join("")}
+$("tabs").onclick=function(e){if(e.target.dataset.t!==undefined){tab=e.target.dataset.t;drawTabs();load()}};
+function renderConn(d){
+ $("connPanel").hidden=d.mode!=="esp32"; if(d.mode!=="esp32")return;
+ var head='<div class="alert"><div>'+(d.online?"Online":'<b style="color:var(--danger)">Offline</b>')+'<small>last reply '+d.last_seen_s+'s ago \u00b7 signal '+(d.rssi!=null?d.rssi+" dBm":"\u2013")+' \u00b7 '+d.drops_24h+' drops in 24h'+(d.last_error?" \u00b7 "+esc(d.last_error):"")+"</small></div></div>";
+ $("conn").innerHTML=head+(d.log.length?d.log.map(function(e){return'<div class="alert"><div>'+(e.event==="offline"?"Dropped":"Back")+" \u00b7 "+fmt(e.time)+"<small>"+(e.event==="offline"?"signal "+e.rssi+" dBm \u00b7 "+e.job_state+(e.pump_on?" \u00b7 pump ON":""):(e.down_s!=null?"down for "+e.down_s+"s":"first connection"))+"</small></div></div>"}).join(""):'<div class="empty">No drops recorded.</div>');
+}
+
+var CSTATE={cold:"Cold",cool:"Cool",disabled:"Cold off"},hm=function(d){return new Date(d).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})};
+function renderCold(c){
+ if(!c||c.level==null){$("cold").innerHTML='<div class="empty">No data from the machine yet.</div>';return}
+ var pct=function(v){return Math.min(100,v/c.capacity*100)},t=c.thresholds,ovr=c.override;
+ var msg=c.state==="disabled"?(ovr==="off"?"Cold is switched off by an admin.":"Cold sales paused. Back in about <b>"+c.back_in_min+" min</b>.")
+  :c.state==="cool"?"Still colder than room temperature. Fully Cold again in about <b>"+c.cold_again_in_min+" min</b>."
+  :"Tank is cold. Sales can continue.";
+ if(ovr==="on"&&c.auto_state==="disabled")msg="Estimator says paused, but an admin forced cold on.";
+ var since=c.tracking_since?"Tracking since the first cold sale at "+hm(c.tracking_since)+(c.full_in_min?" \u00b7 fully recovered in about "+c.full_in_min+" min":""):"No recent cold sales. Tank assumed full.";
+ var mode=function(k,l){return'<button data-o="'+k+'" class="'+(ovr===k?"on":"")+'">'+l+"</button>"};
+ $("cold").innerHTML='<div class="top"><span class="lvl">'+c.level.toLocaleString("en-US")+' ml</span><span class="badge b-'+c.state+'">'+CSTATE[c.state]+'</span></div>'
+  +'<div class="gauge '+c.state+'"><i style="width:'+pct(c.level)+'%"></i><u style="left:'+pct(t.lock_below)+'%" title="locks below this"></u><u style="left:'+pct(t.cold_above)+'%" title="Cold above this"></u></div>'
+  +'<div class="scale"><span>0</span><span>off &lt; '+t.lock_below+'</span><span>Cold \u2265 '+t.cold_above+'</span><span>'+c.capacity+'</span></div>'
+  +'<div class="note">'+msg+'</div><div class="note">'+since+'</div>'
+  +(c.recent.length?'<div class="sub">Last cold sales</div>'+c.recent.map(function(e){return'<div class="alert"><div>'+hm(e.time)+' \u00b7 '+e.ml+' ml<small>'+esc(e.id)+"</small></div></div>"}).join(""):"")
+  +(CLOUD?'<div class="sub">Cold mode: <b>'+({auto:"Automatic",on:"Forced on",off:"Forced off"}[ovr]||ovr)+'</b> \u00b7 change it on the machine\'s own dashboard</div>'
+  :'<div class="sub">Cold sales</div><div class="seg">'+mode("auto","Automatic")+mode("on","Force on")+mode("off","Force off")+"</div>"
+  +'<div class="sub">Tell the estimator about the tank</div><div class="seg"><button data-l="0">Machine just switched on</button><button data-l="'+c.capacity+'">Tank is cold and full</button></div>')
+  +'<div class="note">Estimate only (recovers about '+c.recover_ml_per_min+' ml/min). Check it against a thermometer at the outlet.</div>';
+}
+$("cold").onclick=function(e){var b=e.target;
+ if(b.dataset.o)api("/api/cold/override","POST",{mode:b.dataset.o}).then(renderCold);
+ else if(b.dataset.l!==undefined&&confirm("Set the estimated cold level to "+b.dataset.l+" ml?"))api("/api/cold/reset","POST",{level_ml:+b.dataset.l}).then(renderCold)};
+$("logout").onclick=function(){api("/api/logout","POST").then(function(){location.replace("/login.html")})};
+function load(){
+ api("/api/cold").then(renderCold);
+ api("/api/dispenser").then(renderConn);
+ api("/api/config").then(function(c){
+  CLOUD=!!c.cloud;$("seed").hidden=$("clear").hidden=CLOUD;
+  var bn=$("banner"),msg="";
+  if(CLOUD&&!c.machine)msg="No data from the machine yet. Check CLOUD_URL and SYNC_SECRET in the machine's settings.env.";
+  else if(CLOUD&&!c.machine.online)msg="The machine has not checked in since "+fmt(c.machine.last_seen)+". It may be off, or its internet is down. Numbers below are from before that.";
+  else if(c.payment==="mock")msg="Demo payments only: Midtrans is not connected ("+(c.problem||"PAYMENT_MODE=mock")+"). Open settings.env on the machine, paste the server key, then restart the server.";
+  bn.hidden=!msg;bn.textContent=msg;
+  var sy=c.sync,syncTxt=!sy?"":!sy.enabled?" \u00b7 Cloud copy: <b>off</b>":sy.last_error?' \u00b7 Cloud copy: <b style="color:var(--danger)">failing</b> ('+esc(sy.last_error)+")":" \u00b7 Cloud copy: <b>"+(sy.pending?sy.pending+" waiting":"up to date")+"</b>";
+  $("modes").innerHTML=(CLOUD?"Online copy \u00b7 machine <b>"+esc(c.machine?c.machine.id:"\u2013")+"</b> "+(c.machine&&c.machine.online?"(checked in "+fmt(c.machine.last_seen)+")":'<b style="color:var(--danger)">OFFLINE</b>')+" \u00b7 ":"")
+   +"Payment: <b>"+(c.payment||"\u2013")+(c.payment==="midtrans"?(c.testMode?" (sandbox, test money)":" (LIVE)"):"")+"</b> \u00b7 Dispenser: <b>"+(c.dispenser||"\u2013")+"</b>"+syncTxt;
+  api("/api/dispenser").then(function(d){ if(d.mode==="esp32") $("modes").innerHTML+=" ("+(d.online?"online \u00b7 tank "+d.tank_state+" \u00b7 "+d.job_state:"<b style=\"color:var(--danger)\">OFFLINE</b>")+")"; });
+ });
+ api("/api/stats").then(function(s){
+  var cell=function(n,l,w){return'<div class="stat'+(w?" warn":"")+'"><div class="n">'+n+'</div><div class="l">'+l+"</div></div>"};
+  $("stats").innerHTML=cell(s.paidToday,"paid orders today")+cell(rp(s.revenueToday),"revenue today")+cell((s.mlToday/1000).toFixed(1)+" L","water dispensed today")+cell(s.completionRate===null?"\u2013":s.completionRate+"%","poured to the end")+cell(s.attention,"paid but no water",s.attention>0);
+  var mx=Math.max(1,Math.max.apply(null,s.byTemp.concat(s.byVolume).map(function(x){return x.orders})));
+  var name={ruang:"Room",dingin:"Cold"},bar=function(x,l){return'<div class="bar"><span>'+l+'</span><i style="width:'+x.orders/mx*100+'%"></i><span style="color:var(--ink)">'+x.orders+"</span></div>"};
+  $("mix").innerHTML=s.byVolume.map(function(x){return bar(x,x.key+" ml")}).join("")+s.byTemp.map(function(x){return bar(x,name[x.key])}).join("");
+ });
+ api("/api/orders"+(tab?"?status="+tab:"")).then(function(list){
+  $("rows").innerHTML=list.map(function(o){return'<tr class="'+(o.attention?"attn":"")+'"><td>'+esc(o.id)+(o.fake?'<span class="tag">sample</span>':"")+"</td><td>"+fmt(o.created_at)+'</td><td class="num">'+o.volume+" ml</td><td>"+(o.temp==="dingin"?"Cold":"Room")+'</td><td class="num">'+Math.round(o.dispensed_ml)+" ml"+(o.qc?'<span class="tag" style="color:var(--danger);border-color:var(--danger)">off '+o.variance_pct+"%</span>":"")+"</td><td class=\"num\">"+rp(o.price)+'</td><td><span class="pill '+o.status+'">'+(o.attention&&o.status==="paid"?"Paid, no water":LABEL[o.status])+"</span></td></tr>"}).join("");
+  $("empty").hidden=list.length>0;$("empty").textContent=CLOUD?"No orders synced yet.":"No orders here yet. Use the kiosk, or add sample data."});
+ api("/api/alerts").then(function(a){
+  var open=a.filter(function(x){return!x.resolved});
+  $("alerts").innerHTML=open.length?open.map(function(x){return'<div class="alert"><div>'+(x.type==="dispenser_offline"?"Dispenser not responding":"Water is running low")+'<small>'+(x.source==="esp32_sensor"?"Tank sensor":x.source==="server"?"Server":"Reported at the kiosk")+" \u00b7 "+esc(x.kioskId)+" \u00b7 "+fmt(x.timestamp)+'</small></div><button data-r="'+x.id+'">Mark refilled</button></div>'}).join(""):'<div class="empty">No open alerts.</div>'});
+}
+$("alerts").onclick=function(e){if(e.target.dataset.r)api("/api/alerts/"+e.target.dataset.r+"/resolve","POST").then(load)};
+$("seed").onclick=function(){api("/api/seed","POST").then(load)};
+$("clear").onclick=function(){if(confirm("Remove all sample orders and alerts? Real ones stay."))api("/api/seed","DELETE").then(load)};
+drawTabs();load();setInterval(load,5000);
+</script></body></html>

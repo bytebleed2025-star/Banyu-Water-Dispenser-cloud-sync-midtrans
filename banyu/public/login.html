@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Banyu admin login</title>
+<link rel="icon" href="/banyu-logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#3368A0;--ink:#1F3547;--teal:#66A3BF;--cream:#F4F8FB;--bg:#fff;--muted:#6C889A;--line:#E1EAF0;--danger:#C24B4B}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--cream);color:var(--ink);font:15px/1.5 "Plus Jakarta Sans",system-ui,sans-serif;padding:20px}
+.card{width:100%;max-width:380px;background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:30px 28px;text-align:center}
+.card img{width:200px;max-width:70%;height:auto;display:block;margin:0 auto 6px}
+h1{font:600 20px Fredoka,system-ui,sans-serif;margin:0 0 4px}
+p{margin:0 0 18px;color:var(--muted);font-size:14px}
+label{display:block;text-align:left;font-size:13px;color:var(--muted);margin-bottom:6px}
+input{width:100%;font:inherit;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink)}
+input:focus{outline:3px solid color-mix(in srgb,var(--teal) 55%,transparent);border-color:var(--teal)}
+button{width:100%;margin-top:14px;font:inherit;font-weight:700;border:0;background:var(--navy);color:#fff;padding:11px 14px;border-radius:999px;cursor:pointer}
+button:hover{background:#2a5886}button:disabled{opacity:.6;cursor:default}
+button:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.err{min-height:20px;margin-top:12px;color:var(--danger);font-size:14px}
+</style></head><body>
+<form class="card" id="f" autocomplete="off">
+ <img src="/banyu-logo.png" alt="Banyu">
+ <h1>Admin dashboard</h1>
+ <p>Enter an admin keyword to continue.</p>
+ <label for="k">Keyword</label>
+ <input id="k" type="password" autocomplete="current-password" autofocus required>
+ <button id="go" type="submit">Log in</button>
+ <div class="err" id="err" role="alert"></div>
+</form>
+<script>
+var f=document.getElementById("f"),err=document.getElementById("err"),go=document.getElementById("go");
+fetch("/api/me").then(function(r){if(r.ok)location.replace("/dashboard.html")}).catch(function(){});
+f.onsubmit=function(e){
+ e.preventDefault();err.textContent="";go.disabled=true;
+ fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({keyword:document.getElementById("k").value})})
+ .then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j}})})
+ .then(function(x){if(x.ok)location.replace("/dashboard.html");else{err.textContent=x.j.error||"Could not log in.";go.disabled=false;document.getElementById("k").select()}})
+ .catch(function(){err.textContent="Cannot reach the server.";go.disabled=false});
+};
+</script></body></html>

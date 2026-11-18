@@ -1,0 +1,8 @@
+{
+  "name": "banyu-cloud",
+  "private": true,
+  "description": "Online copy of the Banyu dashboard (Vercel). The machine itself runs banyu/server.js, which needs no packages.",
+  "engines": { "node": ">=20" },
+  "scripts": { "build": "node cloud/build.js" },
+  "dependencies": { "mongodb": "^6.10.0" }
+}

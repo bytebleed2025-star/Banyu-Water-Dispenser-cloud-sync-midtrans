@@ -1,0 +1,1397 @@
+<title>Banyu Kiosk</title>
+<link rel="icon" href="/banyu-logo.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap');
+
+  :root{
+    /* outer page (theme-aware) */
+    --page-bg-1:#F2EFE7;
+    --page-bg-2:#C8DFDB;
+    --page-ink:#20323F;
+    --page-muted:#5B7A8C;
+    --bezel:#182734;
+    --bezel-edge:#0E1922;
+
+    /* kiosk screen — fixed device palette (a real kiosk's firmware skin doesn't
+       follow the viewer's OS theme), per the brand palette supplied */
+    --k-navy:#3368A0;
+    --k-navy-ink:#234c78;
+    --k-teal:#66A3BF;
+    --k-mint:#C8DFDB;
+    --k-cream:#F2EFE7;
+    --k-bg:#FFFFFF;
+    --k-ink:#1F3547;
+    --k-muted:#6C889A;
+    --k-line:#E4EEEC;
+    --k-danger:#C24B4B;
+    --k-danger-ink:#9C3A3A;
+    --k-success:#4C8B6B;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --page-bg-1:#0F1F29;
+      --page-bg-2:#16303A;
+      --page-ink:#E7EFEC;
+      --page-muted:#93AFB9;
+    }
+  }
+  :root[data-theme="dark"]{
+    --page-bg-1:#0F1F29;
+    --page-bg-2:#16303A;
+    --page-ink:#E7EFEC;
+    --page-muted:#93AFB9;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(60vmax 60vmax at 12% -10%, color-mix(in srgb, var(--page-bg-2) 55%, transparent), transparent 60%),
+      radial-gradient(70vmax 70vmax at 110% 110%, color-mix(in srgb, var(--k-navy) 12%, transparent), transparent 60%),
+      var(--page-bg-1);
+    color:var(--page-ink);
+    font-family:"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:22px;
+    padding:32px 16px;
+  }
+
+  .lede{
+    text-align:center;
+    max-width:480px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .lede .eyebrow{
+    font-family:"Fredoka", ui-sans-serif, sans-serif;
+    font-size:13px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--k-navy);
+    font-weight:600;
+  }
+  .lede h1{
+    font-family:"Fredoka", ui-sans-serif, sans-serif;
+    font-weight:600;
+    font-size:clamp(20px,3vw,26px);
+    margin:0;
+    color:var(--page-ink);
+    text-wrap:balance;
+  }
+  .lede p{
+    margin:0;
+    font-size:14.5px;
+    color:var(--page-muted);
+    line-height:1.5;
+  }
+
+  /* ---------- device frame (landscape tablet, mounted horizontally) ---------- */
+  .device{
+    width:min(940px, 94vw);
+    aspect-ratio:16/10;
+    background:linear-gradient(160deg, var(--bezel), var(--bezel-edge));
+    border-radius:34px;
+    padding:16px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.06) inset,
+      0 30px 60px -20px rgba(10,20,28,.45),
+      0 8px 20px -10px rgba(10,20,28,.35);
+    position:relative;
+    flex:none;
+  }
+  .device::before{
+    content:"";
+    position:absolute;
+    top:50%; left:6px; transform:translateY(-50%);
+    width:7px; height:7px; border-radius:50%;
+    background:#0006;
+    box-shadow:0 0 0 3px #ffffff10 inset;
+  }
+  .screen{
+    position:relative;
+    width:100%; height:100%;
+    background:var(--k-bg);
+    border-radius:22px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:row;
+    font-family:"Plus Jakarta Sans", sans-serif;
+    color:var(--k-ink);
+  }
+
+  /* ---------- left rail: brand + vertical step tracker ---------- */
+  .rail{
+    flex:none;
+    width:clamp(170px, 25%, 258px);
+    background:var(--k-cream);
+    border-right:1px solid var(--k-line);
+    padding:24px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    z-index:3;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding-bottom:20px;
+    margin-bottom:18px;
+    border-bottom:1px solid color-mix(in srgb, var(--k-navy) 12%, transparent);
+  }
+  .brand img{ height:auto; width:100%; max-width:190px; display:block; flex:none; }
+  .brand span{
+    font-family:"Fredoka", sans-serif;
+    font-weight:600;
+    font-size:18px;
+    color:var(--k-navy);
+  }
+  .steps-vertical{
+    display:flex;
+    flex-direction:column;
+    flex:1;
+  }
+  .step{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:15px 0;
+  }
+  .step:not(:last-child)::after{
+    content:"";
+    position:absolute;
+    left:7px; top:33px; bottom:-11px;
+    width:2px;
+    background:var(--k-line);
+    z-index:1;
+  }
+  .step.done:not(:last-child)::after{ background:var(--k-navy); }
+  .step .dot{
+    flex:none;
+    position:relative; z-index:2;
+    width:16px; height:16px;
+    border-radius:50%;
+    background:#fff;
+    box-shadow:0 0 0 2px var(--k-line) inset, 0 0 0 2px #fff;
+  }
+  .step.done .dot{ background:var(--k-navy); box-shadow:0 0 0 2px var(--k-navy) inset, 0 0 0 2px #fff; }
+  .step.now .dot{ background:var(--k-teal); box-shadow:0 0 0 4px color-mix(in srgb, var(--k-teal) 35%, transparent), 0 0 0 2px #fff; }
+  .step.now .dot::after{
+    content:"";
+    position:absolute;
+    inset:-2px;
+    border-radius:50%;
+    border:2px solid var(--k-teal);
+    opacity:.65;
+    animation:stepPulse 1.7s ease-out infinite;
+    pointer-events:none;
+  }
+  @keyframes stepPulse{
+    0%{ transform:scale(1); opacity:.65; }
+    100%{ transform:scale(2.4); opacity:0; }
+  }
+  @media (prefers-reduced-motion:reduce){ .step.now .dot::after{ animation:none; } }
+  .step .lbl{
+    font-size:15.5px;
+    font-weight:600;
+    color:var(--k-muted);
+  }
+  .step.now .lbl{ color:var(--k-navy); }
+  .step.done .lbl{ color:var(--k-ink); }
+  .rail-foot{
+    font-size:10.5px;
+    color:var(--k-muted);
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    font-weight:600;
+    opacity:.7;
+  }
+
+  /* ---------- content area ---------- */
+  .content{
+    flex:1;
+    min-width:0;
+    position:relative;
+  }
+  .views{ position:absolute; inset:0; }
+  .view{
+    position:absolute; inset:0;
+    display:flex;
+    flex-direction:column;
+    padding:28px 34px;
+    opacity:0;
+    transform:translateY(10px);
+    pointer-events:none;
+    transition:opacity .32s ease, transform .32s ease;
+    overflow:hidden;
+  }
+  .view.active{
+    opacity:1;
+    transform:translateY(0);
+    pointer-events:auto;
+  }
+
+  .view h2{
+    font-family:"Fredoka", sans-serif;
+    font-weight:600;
+    font-size:21px;
+    margin:0 0 2px;
+    text-wrap:balance;
+    flex:none;
+  }
+  .view .sub{
+    margin:0 0 4px;
+    font-size:13.5px;
+    color:var(--k-muted);
+    line-height:1.5;
+    flex:none;
+  }
+  .view-head{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    flex:none;
+  }
+  .view-head h2, .view-head .sub{ margin:0; }
+  .view-head h2{ margin-bottom:2px; }
+  .back-btn{
+    all:unset;
+    box-sizing:border-box;
+    flex:none;
+    width:36px; height:36px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--k-cream);
+    color:var(--k-navy);
+    cursor:pointer;
+    margin-top:1px;
+    transition:background .12s ease, transform .12s ease;
+  }
+  .back-btn svg{ width:17px; height:17px; }
+  .back-btn:hover{ background:var(--k-mint); }
+  .back-btn:active{ transform:scale(.92); }
+  .back-btn:focus-visible{ outline:2px solid var(--k-navy); outline-offset:2px; }
+
+  /* ---------- volume / temp option cards (row layout, landscape) ---------- */
+  .options{
+    display:grid;
+    gap:14px;
+    flex:1;
+    align-content:center;
+    min-height:0;
+  }
+  .options.grid-3{ grid-template-columns:repeat(3, 1fr); }
+  .impact-badge{
+    flex:none;
+    align-self:center;
+    margin-top:16px;
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    padding:9px 18px;
+    border-radius:100px;
+    background:var(--k-mint);
+    color:var(--k-navy-ink);
+    font-size:12.5px;
+    font-weight:600;
+  }
+  .impact-badge svg{ width:15px; height:15px; flex:none; }
+  .impact-badge b{ font-variant-numeric:tabular-nums; color:var(--k-navy); }
+  .options.grid-2{ grid-template-columns:repeat(2, 1fr); max-width:560px; margin:0 auto; width:100%; }
+  .opt{
+    all:unset;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    gap:10px;
+    padding:22px 14px;
+    border-radius:20px;
+    background:var(--k-cream);
+    border:1.5px solid transparent;
+    cursor:pointer;
+    transition:transform .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .opt:active{ transform:scale(.97); }
+  .opt:focus-visible{ outline:2px solid var(--k-navy); outline-offset:2px; }
+  .opt:hover{ border-color:color-mix(in srgb, var(--k-teal) 60%, transparent); }
+  .opt .glyph{
+    flex:none;
+    width:52px; height:52px;
+    border-radius:16px;
+    background:var(--k-mint);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .opt .glyph svg{ width:26px; height:26px; }
+  .opt .txt{ display:flex; flex-direction:column; gap:2px; }
+  .opt .txt b{
+    font-size:16px;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+  }
+  .opt .txt small{
+    font-size:12px;
+    color:var(--k-muted);
+    line-height:1.35;
+  }
+  .opt .price{
+    font-weight:800;
+    font-size:15px;
+    color:var(--k-navy);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- payment view (two columns) ---------- */
+  .payment-body{
+    flex:1;
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    gap:36px;
+    min-height:0;
+  }
+  .qr-wrap{
+    flex:none;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+  }
+  .qr-box{
+    width:150px; height:150px;
+    border-radius:16px;
+    background:#fff;
+    border:1.5px solid var(--k-line);
+    padding:10px;
+    box-shadow:0 10px 24px -14px rgba(31,53,71,.35);
+  }
+  .qr-box canvas{ width:100%; height:100%; display:block; image-rendering:pixelated; }
+  .qr-caption{
+    display:flex; align-items:center; gap:7px;
+    font-size:12px; color:var(--k-muted);
+  }
+  .pulse-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--k-teal);
+    animation:pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{ opacity:.35; transform:scale(.85);} 50%{ opacity:1; transform:scale(1);} }
+  .pay-timer{
+    font-size:12px;
+    color:var(--k-muted);
+    font-variant-numeric:tabular-nums;
+  }
+  .pay-timer b{ color:var(--k-navy); font-weight:800; }
+  .pay-timer.urgent b{ color:var(--k-danger); }
+
+  .pay-info{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .paycard{
+    background:var(--k-cream);
+    border-radius:18px;
+    padding:18px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .paycard .amount{
+    font-family:"Fredoka", sans-serif;
+    font-size:28px;
+    font-weight:600;
+    color:var(--k-navy);
+    font-variant-numeric:tabular-nums;
+  }
+  .paycard .meta{
+    font-size:12.5px;
+    color:var(--k-muted);
+  }
+  .pay-note{
+    font-size:12.5px;
+    color:var(--k-muted);
+    line-height:1.6;
+  }
+
+  .demo-btn{
+    all:unset;
+    align-self:flex-start;
+    cursor:pointer;
+    font-size:11.5px;
+    color:var(--k-navy);
+    border:1.5px dashed color-mix(in srgb, var(--k-navy) 45%, transparent);
+    padding:9px 16px;
+    border-radius:100px;
+    font-weight:600;
+    margin-top:auto;
+  }
+  .demo-btn:active{ transform:scale(.96); }
+
+  /* ---------- fill / dispense view (cup left, action right, full-height stage) ---------- */
+  .fill-readout{
+    text-align:center;
+    flex:none;
+    margin:2px 0 0;
+  }
+  .fill-readout .ml{
+    font-family:"Fredoka", sans-serif;
+    font-size:34px;
+    font-weight:600;
+    color:var(--k-navy);
+    font-variant-numeric:tabular-nums;
+  }
+  .fill-readout .lbl{
+    font-size:12.5px;
+    color:var(--k-muted);
+  }
+  .fill-stage{
+    flex:1;
+    min-height:0;
+    margin-top:14px;
+    border-radius:26px;
+    background:linear-gradient(165deg, color-mix(in srgb, var(--k-cream) 62%, #fff), #fff);
+    border:1px solid var(--k-line);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px 44px;
+  }
+  .fill-body{
+    width:100%;
+    max-width:520px;
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    min-height:0;
+  }
+  .cup-wrap{
+    flex:none;
+    width:196px; height:245px;
+  }
+  .cup-wrap svg{ width:100%; height:100%; overflow:visible; }
+  #liquidRect{ transition:y .18s linear, height .18s linear; }
+  .wave-x-anim{ animation:waveslide 2.2s linear infinite; }
+  @media (prefers-reduced-motion:reduce){ .wave-x-anim{ animation:none; } }
+  @keyframes waveslide{ from{ transform:translateX(0);} to{ transform:translateX(-80px);} }
+
+  .action-col{
+    flex:none;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    margin-top:30px;
+    margin-right:26px;
+  }
+  .stage-caption{
+    font-size:12.5px;
+    color:var(--k-muted);
+    min-height:16px;
+    text-align:center;
+    max-width:180px;
+  }
+
+  /* circular primary action (Start / Stop) */
+  .btn-circle{
+    all:unset;
+    box-sizing:border-box;
+    flex:none;
+    width:184px; height:184px;
+    border-radius:50%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    cursor:pointer;
+    font-family:"Plus Jakarta Sans", sans-serif;
+    font-weight:800;
+    font-size:16px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    transition:transform .12s ease, filter .12s ease, opacity .2s ease;
+  }
+  .btn-circle svg{ width:32px; height:32px; flex:none; }
+  .btn-circle:active{ transform:scale(.96); }
+  .btn-circle:focus-visible{ outline:2px solid var(--k-navy); outline-offset:4px; }
+  .btn-circle.btn-primary{
+    background:radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--k-teal) 55%, var(--k-navy)), var(--k-navy));
+    color:#fff;
+    box-shadow:0 18px 32px -14px color-mix(in srgb, var(--k-navy) 70%, transparent), 0 0 0 8px color-mix(in srgb, var(--k-navy) 7%, transparent);
+  }
+  .btn-circle.btn-primary:hover{ filter:brightness(1.05); }
+  .btn-circle.btn-danger{
+    background:radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--k-danger) 55%, #fff), var(--k-danger));
+    color:#fff;
+    box-shadow:0 18px 32px -14px color-mix(in srgb, var(--k-danger) 65%, transparent), 0 0 0 8px color-mix(in srgb, var(--k-danger) 7%, transparent);
+  }
+  .btn-circle[disabled]{
+    background:var(--k-line);
+    color:var(--k-muted);
+    box-shadow:none;
+    opacity:.8;
+    pointer-events:none;
+  }
+
+  .btn{
+    all:unset;
+    box-sizing:border-box;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%;
+    padding:16px 20px;
+    border-radius:18px;
+    font-family:"Plus Jakarta Sans", sans-serif;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    text-align:center;
+    transition:transform .12s ease, filter .12s ease, opacity .2s ease;
+  }
+  .btn:active{ transform:scale(.97); }
+  .btn:focus-visible{ outline:2px solid var(--k-navy); outline-offset:2px; }
+  .btn-primary{ background:var(--k-navy); color:#fff; box-shadow:0 12px 22px -12px color-mix(in srgb, var(--k-navy) 70%, transparent); }
+  .btn-primary:hover{ filter:brightness(1.06); }
+  .btn-ghost{ background:var(--k-mint); color:var(--k-navy-ink); }
+  .btn-danger{
+    background:var(--k-danger);
+    color:#fff;
+    box-shadow:0 12px 22px -12px color-mix(in srgb, var(--k-danger) 65%, transparent);
+  }
+  .btn-danger:hover{ filter:brightness(1.05); }
+  .btn[disabled]{ opacity:.45; pointer-events:none; }
+  .btn-row{ display:flex; gap:10px; width:100%; margin-top:auto; }
+  .btn-row .btn{ margin:0; }
+
+  /* ---------- modal overlay ---------- */
+  .overlay{
+    position:absolute; inset:0;
+    background:color-mix(in srgb, var(--bezel) 45%, transparent);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none;
+    transition:opacity .22s ease;
+    z-index:10;
+    padding:20px;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .modal{
+    background:var(--k-bg);
+    border-radius:22px;
+    padding:26px 24px 22px;
+    width:100%;
+    max-width:300px;
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    transform:scale(.92) translateY(6px);
+    transition:transform .22s ease;
+  }
+  .overlay.show .modal{ transform:scale(1) translateY(0); }
+  .modal .icon{
+    width:52px; height:52px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:6px;
+  }
+  .modal .icon svg{ width:26px; height:26px; }
+  .modal h3{
+    font-family:"Fredoka", sans-serif;
+    font-weight:600;
+    font-size:17px;
+    margin:0 0 2px;
+  }
+  .modal p{
+    margin:0 0 14px;
+    font-size:13px;
+    color:var(--k-muted);
+    line-height:1.5;
+  }
+  .modal .btn-row{ padding-top:0; width:100%; }
+
+  /* ---------- manual "water shortage" report (backup for ESP32 auto-detect) ---------- */
+  .report-btn{
+    all:unset;
+    box-sizing:border-box;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    width:100%;
+    margin-top:10px;
+    padding:9px 12px;
+    border-radius:14px;
+    background:#fff;
+    border:1.5px solid color-mix(in srgb, var(--k-danger) 28%, transparent);
+    color:var(--k-danger-ink);
+    font-size:12px;
+    font-weight:700;
+    line-height:1.25;
+    cursor:pointer;
+    transition:transform .12s ease, background .12s ease, opacity .2s ease;
+  }
+  .report-btn svg{ flex:none; width:16px; height:16px; }
+  .report-btn:hover{ background:color-mix(in srgb, var(--k-danger) 7%, #fff); }
+  .report-btn:active{ transform:scale(.97); }
+  .report-btn:focus-visible{ outline:2px solid var(--k-navy); outline-offset:2px; }
+  .report-btn[disabled]{ opacity:.5; pointer-events:none; }
+
+  .toast{
+    position:absolute;
+    left:50%; bottom:22px;
+    z-index:20; /* above modal overlays (z-index:10) */
+    display:flex;
+    align-items:center;
+    gap:9px;
+    max-width:calc(100% - 40px);
+    padding:11px 18px 11px 14px;
+    border-radius:100px;
+    background:var(--k-ink);
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    box-shadow:0 14px 28px -12px rgba(10,20,28,.55);
+    opacity:0;
+    transform:translate(-50%, 12px);
+    pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%, 0); }
+  .toast svg{ flex:none; width:18px; height:18px; }
+  .toast.error{ background:var(--k-danger-ink); }
+  @media (prefers-reduced-motion:reduce){ .toast{ transition:opacity .1s linear; transform:translate(-50%,0); } }
+
+  /* misc */
+  .visually-hidden{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+
+  /* ---- real-tablet mode: no mock-up frame, the UI fills whatever screen it runs on ---- */
+  html,body{ height:100%; overflow:hidden; }
+  body{ display:block; padding:0; gap:0; background:var(--k-bg); }
+  .lede{ display:none; }
+  .device{ width:100vw; height:100vh; height:100dvh; aspect-ratio:auto; border-radius:0; padding:0; background:none; box-shadow:none; }
+  .device::before{ display:none; }
+  .screen{ border-radius:0; }
+</style>
+
+<div class="lede">
+  <span class="eyebrow">Prototipe Perangkat Lunak</span>
+  <h1>Antarmuka Layar Sentuh Banyu</h1>
+  <p>Simulasi layar tablet Android (landscape) di dispenser: pilih volume &amp; suhu, bayar dengan QRIS, lalu pantau proses pengisian tumbler secara langsung.</p>
+</div>
+
+<div class="device">
+  <div class="screen" id="screen">
+
+    <div class="rail">
+      <div class="brand">
+        <img src="/banyu-logo.png" alt="Banyu">
+      </div>
+      <div class="steps-vertical" id="steps" aria-hidden="true">
+        <div class="step" data-step="0"><span class="dot"></span><span class="lbl">Volume</span></div>
+        <div class="step" data-step="1"><span class="dot"></span><span class="lbl">Suhu</span></div>
+        <div class="step" data-step="2"><span class="dot"></span><span class="lbl">Pembayaran</span></div>
+        <div class="step" data-step="3"><span class="dot"></span><span class="lbl">Pengisian</span></div>
+      </div>
+      <button class="report-btn" id="reportShortageBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3c2 3 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 3-7 5-10Z" stroke="#C24B4B" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 11v3M12 16.6h.01" stroke="#C24B4B" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span>Air habis? Laporkan</span>
+      </button>
+      <div class="rail-foot">Smart Refill Station</div>
+    </div>
+
+    <div class="content">
+      <div class="views">
+
+        <!-- 1. VOLUME -->
+        <section class="view active" data-view="volume">
+          <h2>Pilih Volume Air</h2>
+          <p class="sub">Sentuh salah satu ukuran untuk memulai.</p>
+          <div class="options grid-3">
+            <button class="opt" data-vol="300" data-price="2000">
+              <span class="glyph">
+                <svg viewBox="0 0 24 24" fill="none" style="width:16px;height:16px;"><rect x="8.5" y="2" width="7" height="2.6" rx="1.3" stroke="#3368A0" stroke-width="1.5"/><path d="M7 7h10l-1 12.2a2 2 0 0 1-2 1.8h-4a2 2 0 0 1-2-1.8L7 7Z" stroke="#3368A0" stroke-width="1.7" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="txt"><b>300 ml</b><small>Tumbler kecil &middot; isi cepat</small></span>
+              <span class="price">Rp2.000</span>
+            </button>
+            <button class="opt" data-vol="600" data-price="2500">
+              <span class="glyph">
+                <svg viewBox="0 0 24 24" fill="none" style="width:22px;height:22px;"><rect x="8.5" y="2" width="7" height="2.6" rx="1.3" stroke="#3368A0" stroke-width="1.5"/><path d="M7 7h10l-1 12.2a2 2 0 0 1-2 1.8h-4a2 2 0 0 1-2-1.8L7 7Z" stroke="#3368A0" stroke-width="1.7" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="txt"><b>600 ml</b><small>Tumbler sedang &middot; paling umum</small></span>
+              <span class="price">Rp2.500</span>
+            </button>
+            <button class="opt" data-vol="900" data-price="5000">
+              <span class="glyph">
+                <svg viewBox="0 0 24 24" fill="none" style="width:29px;height:29px;"><rect x="8.5" y="2" width="7" height="2.6" rx="1.3" stroke="#3368A0" stroke-width="1.5"/><path d="M7 7h10l-1 12.2a2 2 0 0 1-2 1.8h-4a2 2 0 0 1-2-1.8L7 7Z" stroke="#3368A0" stroke-width="1.7" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="txt"><b>900 ml</b><small>Tumbler besar &middot; kebutuhan seharian</small></span>
+              <span class="price">Rp5.000</span>
+            </button>
+          </div>
+          <div class="impact-badge">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 2h6v3.2l2.6 4.6A5 5 0 0 1 18 14.5V20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-5.5a5 5 0 0 1 .4-4.7L9 5.2V2Z" stroke="#234c78" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.6 13h10.8" stroke="#234c78" stroke-width="1.5"/></svg>
+            <span>Bersama Banyu, <b id="bottlesSaved">0</b> botol plastik terselamatkan</span>
+          </div>
+        </section>
+
+        <!-- 2. TEMPERATURE -->
+        <section class="view" data-view="temp">
+          <div class="view-head">
+            <button class="back-btn" data-back="volume" type="button" aria-label="Kembali ke pilih volume">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M15 5 8 12l7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div>
+              <h2>Pilih Suhu Air</h2>
+              <p class="sub">Air akan dituang sesuai suhu yang kamu pilih.</p>
+            </div>
+          </div>
+          <div class="options grid-2">
+            <button class="opt" data-temp="ruang">
+              <span class="glyph">
+                <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="6.2" stroke="#3368A0" stroke-width="1.7"/><path d="M12 4.6V3M12 21v-1.6M19.4 12H21M3 12h1.6M17.4 6.6l1.1-1.1M5.5 18.5l1.1-1.1M17.4 17.4l1.1 1.1M5.5 5.5l1.1 1.1" stroke="#3368A0" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </span>
+              <span class="txt"><b>Suhu Ruang</b><small>Segar apa adanya</small></span>
+            </button>
+            <button class="opt" data-temp="dingin">
+              <span class="glyph">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 2v20M5.5 5.5l13 13M18.5 5.5l-13 13M8 3.6 12 6l4-2.4M8 20.4 12 18l4 2.4M3.6 8 6 12l-2.4 4M20.4 8 18 12l2.4 4" stroke="#66A3BF" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </span>
+              <span class="txt"><b>Suhu Dingin</b><small>Didinginkan otomatis</small></span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 3. PAYMENT -->
+        <section class="view" data-view="payment">
+          <div class="view-head">
+            <button class="back-btn" data-back="temp" type="button" aria-label="Kembali ke pilih suhu">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M15 5 8 12l7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div>
+              <h2>Pembayaran QRIS</h2>
+              <p class="sub">Buka aplikasi e-wallet atau m-banking, lalu pindai kode di samping.</p>
+            </div>
+          </div>
+          <div class="payment-body">
+            <div class="qr-wrap">
+              <div class="qr-box"><canvas id="qrCanvas" width="120" height="120"></canvas></div>
+              <div class="qr-caption"><span class="pulse-dot"></span><span>Menunggu pembayaran&hellip;</span></div>
+              <div class="pay-timer" id="payTimer">Selesaikan dalam <b id="payTimerNum">60</b> detik</div>
+            </div>
+            <div class="pay-info">
+              <div class="paycard">
+                <div class="amount" id="payAmount">Rp0</div>
+                <div class="meta" id="payMeta">300 ml &middot; Suhu Ruang</div>
+              </div>
+              <p class="pay-note">Pembayaran akan terkonfirmasi otomatis begitu QRIS terbaca. Jangan tinggalkan layar sebelum status berubah.</p>
+              <button class="demo-btn" id="simPay">(Demo) Tandai pembayaran berhasil</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. FILL -->
+        <section class="view" data-view="fill">
+          <h2 id="fillTitle">Siap Mengisi</h2>
+          <p class="sub" id="fillSub">Letakkan tumblermu di bawah nozzle, lalu sentuh Start.</p>
+          <div class="fill-readout">
+            <div class="ml" id="fillMl">0 ml</div>
+            <div class="lbl" id="fillLbl">dari 300 ml</div>
+          </div>
+          <div class="fill-stage">
+            <div class="fill-body">
+              <div class="cup-wrap">
+                <svg viewBox="0 0 160 200">
+                  <defs>
+                    <clipPath id="tumblerClip">
+                      <path d="M32 34 L128 34 L120 170 A16 16 0 0 1 104 186 L56 186 A16 16 0 0 1 40 170 Z"/>
+                    </clipPath>
+                    <linearGradient id="liquidGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#66A3BF"/>
+                      <stop offset="100%" stop-color="#3368A0"/>
+                    </linearGradient>
+                  </defs>
+                  <g clip-path="url(#tumblerClip)">
+                    <rect id="liquidRect" x="0" y="186" width="160" height="0" fill="url(#liquidGrad)"/>
+                    <g id="waveY" style="transform:translate(0px,176px);">
+                      <g class="wave-x-anim">
+                        <path d="M-160 0 Q-140 -8 -120 0 T -80 0 T -40 0 T 0 0 T 40 0 T 80 0 T 120 0 T 160 0 T 200 0 T 240 0 T 280 0 T 320 0 V20 H-160 Z" fill="#C8DFDB" opacity=".85"/>
+                      </g>
+                    </g>
+                  </g>
+                  <rect x="44" y="8" width="72" height="24" rx="12" fill="#fff" stroke="#3368A0" stroke-width="4"/>
+                  <circle cx="118" cy="10" r="7" fill="#fff" stroke="#3368A0" stroke-width="3.2"/>
+                  <path d="M32 34 L128 34 L120 170 A16 16 0 0 1 104 186 L56 186 A16 16 0 0 1 40 170 Z" fill="none" stroke="#3368A0" stroke-width="4" stroke-linejoin="round"/>
+                  <path d="M46 50 L42 148" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity=".3"/>
+                </svg>
+              </div>
+              <div class="action-col">
+                <div id="fillActions">
+                  <button class="btn-circle btn-primary" id="startBtn">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M7 4.5v15l13-7.5-13-7.5Z" fill="#fff"/></svg>
+                    Start
+                  </button>
+                </div>
+                <p class="stage-caption" id="stageCaption">&nbsp;</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- STOP CONFIRM MODAL -->
+    <div class="overlay" id="stopOverlay">
+      <div class="modal">
+        <div class="icon" style="background:color-mix(in srgb, var(--k-danger) 14%, transparent);">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4.2M12 16.4h.01" stroke="#C24B4B" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="#C24B4B" stroke-width="1.8"/></svg>
+        </div>
+        <h3>Lanjutkan mengisi?</h3>
+        <p>Pengisian dihentikan sementara. Jika dibatalkan, air yang sudah terisi tidak dapat dikembalikan (tidak ada refund).</p>
+        <p class="pay-timer" id="stopCountdownNote">Pilih dalam <b id="stopCountdownNum">15</b> detik, atau pengisian otomatis dihentikan.</p>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="stopNo">Tidak</button>
+          <button class="btn btn-primary" id="stopYes">Ya, lanjutkan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CANCELLED MODAL -->
+    <div class="overlay" id="cancelOverlay">
+      <div class="modal">
+        <div class="icon" style="background:color-mix(in srgb, var(--k-danger) 14%, transparent);">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M7 7l10 10M17 7 7 17" stroke="#C24B4B" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Pengisian Dihentikan</h3>
+        <p>Proses dibatalkan oleh pengguna. Tidak ada pengembalian dana untuk air yang sudah terisi.</p>
+      </div>
+    </div>
+
+    <!-- DONE MODAL -->
+    <div class="overlay" id="doneOverlay">
+      <div class="modal">
+        <div class="icon" style="background:color-mix(in srgb, var(--k-success) 16%, transparent);">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 3c2 3 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 3-7 5-10Z" stroke="#4C8B6B" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Terima kasih!</h3>
+        <p>Semoga harimu menyenangkan. Sampai jumpa di isi ulang berikutnya.</p>
+      </div>
+    </div>
+
+    <!-- TOAST (manual shortage report feedback) -->
+    <div class="toast" id="toast" role="status" aria-live="polite">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" id="toastIcon"></svg>
+      <span id="toastMsg"></span>
+    </div>
+
+  </div>
+</div>
+
+<script src="qrcode.js"></script>
+<script>
+// Scale the whole UI to the tablet it runs on (designed at 940x587; clamps keep it readable)
+(function(){ var el=document.getElementById("screen");
+  function fit(){ var k=Math.max(.8,Math.min(1.8,Math.min(innerWidth/940,innerHeight/587)));
+    el.style.transformOrigin="0 0"; el.style.transform="scale("+k+")"; el.style.width=(100/k)+"%"; el.style.height=(100/k)+"%"; }
+  addEventListener("resize",fit); fit(); })();
+</script>
+<script>
+(function(){
+  "use strict";
+
+  var state = {
+    volume:300, price:2000, temp:null, tempLabel:"", filled:0, target:300, timer:null, running:false,
+    payTimer:null, paySecondsLeft:0,
+    stopUsed:false, stopDecideTimer:null, stopDecideSeconds:0
+  };
+  var PAY_SECONDS = 60;
+  // ---- server reporting: fire-and-forget, the kiosk still works if the server is off ----
+  function post(url, body){ try{ return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:(window.AbortSignal && AbortSignal.timeout) ? AbortSignal.timeout(25000) : undefined}); }catch(e){ return Promise.reject(e); } }
+  var CFG = {payment:"mock", dispenser:"mock", testMode:true};
+  // nobody touching the screen: return to the first page after 90s; reload after 10 min idle (picks up fresh settings)
+  var IDLE_BACK_MS = 90000, IDLE_RELOAD_MS = 600000, lastTouch = Date.now();
+  ["pointerdown","keydown"].forEach(function(ev){ addEventListener(ev, function(){ lastTouch = Date.now(); }, true); });
+  setInterval(function(){
+    var v = document.querySelector(".view.active"), name = v && v.dataset.view, idle = Date.now() - lastTouch;
+    if (name === "temp" && idle > IDLE_BACK_MS){ showView("volume"); }
+    else if (name === "volume" && idle > IDLE_RELOAD_MS){ location.reload(); }
+  }, 5000);
+  // ---- cold water: the server estimates the cold tank; when it is too low the cold option is disabled for a while ----
+  function checkCold(){
+    fetch("/api/cold/public").then(function(r){return r.json();}).then(function(c){
+      var b = document.querySelector('[data-temp="dingin"]'); if (!b) return;
+      var small = b.querySelector("small"); if (!small) return;
+      if (!small.dataset.orig) small.dataset.orig = small.textContent;
+      b.disabled = !c.enabled; b.style.opacity = c.enabled ? "" : ".5";
+      small.textContent = c.enabled ? small.dataset.orig : "Sedang mendingin, tersedia lagi \u00b1" + c.back_in_min + " menit";
+    }).catch(function(){});
+  }
+  checkCold(); setInterval(checkCold, 10000);
+  fetch("/api/config").then(function(r){return r.json();}).then(function(c){
+    CFG = c; if (c.payment==="mock") document.getElementById("simPay").textContent = "(DEMO \u2013 Midtrans belum terhubung) Tandai pembayaran berhasil";
+    else document.getElementById("simPay").style.display="none";   // real payments: only Midtrans can mark an order paid
+  }).catch(function(){});
+  function drawRealQR(text){
+    var q = qrcode(0,"M"); q.addData(text); q.make();
+    var n = q.getModuleCount(), m = Math.floor(240/(n+8)), size = m*(n+8);
+    var c = document.getElementById("qrCanvas"), ctx = c.getContext("2d");
+    c.width = c.height = size; ctx.fillStyle="#fff"; ctx.fillRect(0,0,size,size); ctx.fillStyle="#000";
+    for (var r=0;r<n;r++) for (var k=0;k<n;k++) if (q.isDark(r,k)) ctx.fillRect((k+4)*m,(r+4)*m,m,m);
+  }
+  // ---- Midtrans Snap checkout: leave for Midtrans's payment page, come back to /?order=ID ----
+  function overlay(msg, sub){
+    var d = document.getElementById("xovl");
+    if (!d){ d = document.createElement("div"); d.id = "xovl";
+      d.style.cssText = "position:absolute;inset:0;z-index:50;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-family:Fredoka,sans-serif;color:#1F3547;text-align:center;padding:24px";
+      document.getElementById("screen").appendChild(d); }
+    d.innerHTML = '<div style="font-size:26px;font-weight:600"></div><div style="font-size:15px;color:#6C889A;max-width:420px"></div>';
+    d.children[0].textContent = msg; d.children[1].textContent = sub || ""; d.style.display = "flex";
+  }
+  function hideOverlay(){ var d = document.getElementById("xovl"); if (d) d.style.display = "none"; }
+  function startInvoiceCheckout(){
+    overlay("Mengalihkan ke halaman pembayaran\u2026", "Selesaikan pembayaran di halaman Midtrans, lalu Anda akan kembali ke sini.");
+    post("/api/orders",{kioskId:KIOSK_ID,volume:state.volume,temp:state.temp}).then(function(r){
+      if (!r.ok) throw {status:r.status}; return r.json();
+    }).then(function(o){ var u = o.payment_url || o.invoice_url; if (!u) throw 0; location.href = u; })
+    .catch(function(e){ hideOverlay(); showToast(e && e.status===503 ? "Mohon maaf, mesin sedang tidak tersedia." : "Pembayaran belum tersedia. Silakan coba lagi.", true); showView("volume"); });
+  }
+  window.addEventListener("load", function(){
+    var q = new URLSearchParams(location.search), id = q.get("order"); if (!id) return;
+    history.replaceState(null, "", location.pathname);
+    state.orderId = id;
+    var ts = q.get("transaction_status");   // Midtrans adds this when it sends the customer back
+    if (q.get("failed") || (ts && !/^(settlement|capture|pending)$/.test(ts))){ report("cancelled"); showToast("Pembayaran tidak berhasil. Silakan coba lagi.", true); return; }
+    overlay("Memeriksa pembayaran\u2026", "Mohon tunggu sebentar.");
+    var tries = 0;
+    (function check(){
+      fetch("/api/orders/"+id).then(function(r){ return r.json(); }).then(function(o){
+        if (o.status === "paid"){
+          state.volume = o.volume; state.price = o.price; state.target = o.volume; state.filled = 0;
+          state.temp = o.temp; state.tempLabel = o.temp === "dingin" ? "Suhu Dingin" : "Suhu Ruang";
+          hideOverlay(); goPaid();
+        } else if (o.status === "awaiting_payment" && ++tries < 45){ setTimeout(check, 2000); }
+        else { hideOverlay(); showToast("Pembayaran belum terkonfirmasi.", true); showView("volume"); }
+      }).catch(function(){ hideOverlay(); showView("volume"); });
+    })();
+  });
+  function goPaid(){ stopPayCountdown(); resetFillUI(); showView("fill"); }
+  function createOrder(){
+    state.orderId = null; clearInterval(state.payPoll);
+    if (CFG.payment!=="mock"){ var qc=document.getElementById("qrCanvas"); qc.getContext("2d").clearRect(0,0,qc.width,qc.height); }
+    post("/api/orders",{kioskId:KIOSK_ID,volume:state.volume,temp:state.temp}).then(function(r){
+      if (!r.ok) throw {status:r.status}; return r.json();
+    }).then(function(o){
+      state.orderId = o.id; document.getElementById("payMeta").textContent += " \u00b7 " + o.id;
+      if (o.qr_string) drawRealQR(o.qr_string);
+      if (CFG.payment!=="mock"){   // the server learns about payment from the payment provider; we just ask the server
+        state.payPoll = setInterval(function(){
+          fetch("/api/orders/"+state.orderId).then(function(r){return r.json();}).then(function(x){ if (x.status==="paid") goPaid(); }).catch(function(){});
+        }, 1500);
+      }
+    }).catch(function(e){
+      var na = e && e.status===503;
+      if (CFG.payment!=="mock" || na){ stopPayCountdown(); showToast(na ? "Mohon maaf, mesin sedang tidak tersedia." : "Pembayaran QRIS belum tersedia. Silakan coba lagi.", true); showView("volume"); }
+    });
+  }
+  function report(status, ml){
+    if (!state.orderId) return;
+    post("/api/orders/"+state.orderId+"/status",{status:status,dispensed_ml:Math.round(ml||0)}).catch(function(){});
+  }
+  var STOP_DECIDE_SECONDS = 15;
+  var VIEWS = ["volume","temp","payment","fill"];
+  var money = function(n){ return "Rp" + n.toLocaleString("id-ID"); };
+
+  function showView(name){
+    document.querySelectorAll(".view").forEach(function(v){
+      v.classList.toggle("active", v.dataset.view === name);
+    });
+    var idx = VIEWS.indexOf(name);
+    document.querySelectorAll("#steps .step").forEach(function(step,i){
+      step.classList.toggle("done", i < idx);
+      step.classList.toggle("now", i === idx);
+    });
+  }
+
+  // ---- back navigation ----
+  document.querySelectorAll("[data-back]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      if (btn.dataset.back === "temp"){ stopPayCountdown(); report("cancelled"); }
+      showView(btn.dataset.back);
+    });
+  });
+
+  // ---- 1. volume ----
+  document.querySelectorAll("[data-vol]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      state.volume = parseInt(btn.dataset.vol, 10);
+      state.price  = parseInt(btn.dataset.price, 10);
+      state.target = state.volume;
+      showView("temp");
+    });
+  });
+
+  // ---- 2. temperature ----
+  document.querySelectorAll("[data-temp]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      state.temp = btn.dataset.temp;
+      state.tempLabel = state.temp === "dingin" ? "Suhu Dingin" : "Suhu Ruang";
+      document.getElementById("payAmount").textContent = money(state.price);
+      document.getElementById("payMeta").textContent = state.volume + " ml · " + state.tempLabel;
+      if (CFG.flow === "invoice"){ startInvoiceCheckout(); return; }
+      drawQR();
+      createOrder();
+      showView("payment");
+      startPayCountdown();
+    });
+  });
+
+  // ---- 3. payment (simulated) ----
+  function startPayCountdown(){
+    clearInterval(state.payTimer);
+    state.paySecondsLeft = PAY_SECONDS;
+    updatePayCountdownUI();
+    state.payTimer = setInterval(function(){
+      state.paySecondsLeft--;
+      updatePayCountdownUI();
+      if (state.paySecondsLeft <= 0){
+        clearInterval(state.payTimer);
+        clearInterval(state.payPoll); report("expired");
+        showView("volume");
+      }
+    }, 1000);
+  }
+  function stopPayCountdown(){
+    clearInterval(state.payTimer); clearInterval(state.payPoll);
+  }
+  function updatePayCountdownUI(){
+    var el = document.getElementById("payTimer");
+    document.getElementById("payTimerNum").textContent = state.paySecondsLeft;
+    if (el) el.classList.toggle("urgent", state.paySecondsLeft <= 10);
+  }
+
+  document.getElementById("simPay").addEventListener("click", function(){
+    if (CFG.payment!=="mock") return;   // real payments are confirmed by Midtrans, never by this button
+    report("paid");
+    goPaid();
+  });
+
+  function drawQR(){
+    var c = document.getElementById("qrCanvas");
+    var ctx = c.getContext("2d");
+    var n = 21, cell = c.width / n;
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.fillStyle = "#1F3547";
+    // deterministic pseudo-random pattern seeded by price, just for a plausible QR look
+    var seed = state.price + state.volume;
+    function rnd(i){ seed = (seed * 9301 + 49297) % 233280; return (seed / 233280) > 0.52 ? 1 : (i%7===0?1:0); }
+    for (var y=0; y<n; y++){
+      for (var x=0; x<n; x++){
+        var isFinder = (x<7&&y<7) || (x>n-8&&y<7) || (x<7&&y>n-8);
+        if (isFinder){ continue; }
+        if (rnd(x*n+y)) ctx.fillRect(x*cell, y*cell, cell, cell);
+      }
+    }
+    // finder patterns
+    [[0,0],[n-7,0],[0,n-7]].forEach(function(p){
+      ctx.fillStyle = "#1F3547";
+      ctx.fillRect(p[0]*cell, p[1]*cell, 7*cell, 7*cell);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect((p[0]+1)*cell, (p[1]+1)*cell, 5*cell, 5*cell);
+      ctx.fillStyle = "#1F3547";
+      ctx.fillRect((p[0]+2)*cell, (p[1]+2)*cell, 3*cell, 3*cell);
+    });
+  }
+
+  // ---- 4. fill / dispense ----
+  var liquidRect = document.getElementById("liquidRect");
+  var waveY = document.getElementById("waveY");
+  var fillMl = document.getElementById("fillMl");
+  var fillLbl = document.getElementById("fillLbl");
+  var fillTitle = document.getElementById("fillTitle");
+  var fillSub = document.getElementById("fillSub");
+  var fillActions = document.getElementById("fillActions");
+  var stageCaption = document.getElementById("stageCaption");
+
+  var BODY_TOP = 34, BODY_BOTTOM = 186; // tumblerClip body span, in SVG viewBox units
+
+  function renderFill(){
+    var pct = (state.filled / state.target) * 100;
+    var fillPx = (pct / 100) * (BODY_BOTTOM - BODY_TOP);
+    var rectY = BODY_BOTTOM - fillPx;
+    liquidRect.setAttribute("y", rectY);
+    liquidRect.setAttribute("height", fillPx + 30);
+    waveY.style.transform = "translate(0px," + (rectY - 10) + "px)";
+    fillMl.textContent = Math.round(state.filled) + " ml";
+  }
+
+  function resetFillUI(){
+    state.filled = 0;
+    state.running = false;
+    state.stopUsed = false;
+    clearInterval(state.timer);
+    renderFill();
+    fillLbl.textContent = "dari " + state.target + " ml";
+    fillTitle.textContent = "Siap Mengisi";
+    fillSub.textContent = "Letakkan tumblermu di bawah nozzle, lalu sentuh Start.";
+    stageCaption.innerHTML = "&nbsp;";
+    fillActions.innerHTML = '<button class="btn-circle btn-primary" id="startBtn"><svg viewBox="0 0 24 24" fill="none"><path d="M7 4.5v15l13-7.5-13-7.5Z" fill="#fff"/></svg>Start</button>';
+    document.getElementById("startBtn").addEventListener("click", startFilling);
+  }
+  document.getElementById("startBtn").addEventListener("click", startFilling);
+
+  function renderStopButton(){
+    if (state.stopUsed){
+      fillActions.innerHTML = '<button class="btn-circle btn-danger" id="stopBtn" disabled><svg viewBox="0 0 24 24" fill="none"><rect x="5" y="5" width="14" height="14" rx="3" fill="#fff" opacity=".7"/></svg>Terpakai</button>';
+      return;
+    }
+    fillActions.innerHTML = '<button class="btn-circle btn-danger" id="stopBtn"><svg viewBox="0 0 24 24" fill="none"><rect x="5" y="5" width="14" height="14" rx="3" fill="#fff"/></svg>Stop</button>';
+    document.getElementById("stopBtn").addEventListener("click", emergencyStop);
+  }
+
+  function startFilling(){
+    if (CFG.dispenser === "esp32"){ realStart(); return; }
+    report("dispensing");
+    state.running = true;
+    fillTitle.textContent = "Sedang Mengisi…";
+    fillSub.textContent = "Jangan angkat tumbler sampai proses selesai.";
+    renderStopButton();
+
+    var durationMs = (state.target / 300) * 5000; // ~5s per 300ml, matches Banyu's calibration
+    var stepMs = 80;
+    var stepAmount = state.target / (durationMs / stepMs);
+
+    state.timer = setInterval(function(){
+      state.filled = Math.min(state.target, state.filled + stepAmount);
+      renderFill();
+      if (state.filled >= state.target){
+        clearInterval(state.timer);
+        state.running = false;
+        setTimeout(onComplete, 260);
+      }
+    }, stepMs);
+  }
+
+  // ---- real dispenser: the SERVER runs the pour; we only show what it reports ----
+  function watchPour(){
+    clearInterval(state.timer);
+    state.timer = setInterval(function(){
+      fetch("/api/orders/"+state.orderId).then(function(r){ return r.json(); }).then(function(o){
+        state.filled = Math.min(state.target, o.dispensed_ml || 0); renderFill();
+        if (o.status === "completed"){ clearInterval(state.timer); state.running = false; state.filled = state.target; renderFill(); setTimeout(onComplete, 260); }
+        else if (o.status === "stopped"){ clearInterval(state.timer); state.running = false; handleStopNo(); }
+      }).catch(function(){});
+    }, 700);
+  }
+  function realStart(){
+    post("/api/orders/"+state.orderId+"/start",{}).then(function(r){ if (!r.ok) throw 0; }).then(function(){
+      state.running = true; fillTitle.textContent = "Sedang Mengisi\u2026";
+      fillSub.textContent = "Jangan angkat tumbler sampai proses selesai."; renderStopButton(); watchPour();
+    }).catch(function(){
+      showToast("Mesin tidak dapat memulai. Hubungi petugas; pembayaran akan dikembalikan.", true);
+      setTimeout(function(){ showView("volume"); resetFillUI(); }, 3500);
+    });
+  }
+  function realResume(){
+    post("/api/orders/"+state.orderId+"/resume",{}).catch(function(){});
+    state.running = true; fillTitle.textContent = "Sedang Mengisi\u2026"; renderStopButton(); watchPour();
+  }
+
+  function emergencyStop(){
+    if (!state.running || state.stopUsed) return;
+    state.running = false;
+    state.stopUsed = true;
+    clearInterval(state.timer);
+    if (CFG.dispenser === "esp32" && state.orderId) post("/api/orders/"+state.orderId+"/pause",{}).catch(function(){});
+    renderStopButton(); // lock the button immediately — emergency stop is one-time use
+    openStopOverlay();
+  }
+
+  function openStopOverlay(){
+    document.getElementById("stopOverlay").classList.add("show");
+    clearInterval(state.stopDecideTimer);
+    state.stopDecideSeconds = STOP_DECIDE_SECONDS;
+    updateStopCountdownUI();
+    state.stopDecideTimer = setInterval(function(){
+      state.stopDecideSeconds--;
+      updateStopCountdownUI();
+      if (state.stopDecideSeconds <= 0){
+        clearInterval(state.stopDecideTimer);
+        document.getElementById("stopOverlay").classList.remove("show");
+        handleStopNo(); // no choice made in time — treat like "Tidak", stop for good
+      }
+    }, 1000);
+  }
+  function clearStopDecideTimer(){
+    clearInterval(state.stopDecideTimer);
+  }
+  function updateStopCountdownUI(){
+    var el = document.getElementById("stopCountdownNote");
+    document.getElementById("stopCountdownNum").textContent = state.stopDecideSeconds;
+    if (el) el.classList.toggle("urgent", state.stopDecideSeconds <= 5);
+  }
+
+  document.getElementById("stopYes").addEventListener("click", function(){
+    clearStopDecideTimer();
+    document.getElementById("stopOverlay").classList.remove("show");
+    resumeFilling();
+  });
+
+  document.getElementById("stopNo").addEventListener("click", function(){
+    clearStopDecideTimer();
+    handleStopNo();
+  });
+
+  function handleStopNo(){
+    document.getElementById("stopOverlay").classList.remove("show");
+    if (CFG.dispenser === "esp32" && state.orderId) post("/api/orders/"+state.orderId+"/stop",{}).catch(function(){});
+    report("stopped", state.filled);
+    stageCaption.textContent = "Dihentikan pada " + Math.round(state.filled) + " ml.";
+    document.getElementById("cancelOverlay").classList.add("show");
+    setTimeout(function(){
+      document.getElementById("cancelOverlay").classList.remove("show");
+      showView("volume");
+      resetFillUI();
+    }, 2600);
+  }
+
+  function resumeFilling(){
+    if (CFG.dispenser === "esp32"){ realResume(); return; }
+    state.running = true;
+    fillTitle.textContent = "Sedang Mengisi…";
+    renderStopButton(); // already used up, so this renders the disabled state
+
+    var remaining = state.target - state.filled;
+    var durationMs = (remaining / 300) * 5000;
+    var stepMs = 80;
+    var steps = Math.max(1, durationMs / stepMs);
+    var stepAmount = remaining / steps;
+
+    state.timer = setInterval(function(){
+      state.filled = Math.min(state.target, state.filled + stepAmount);
+      renderFill();
+      if (state.filled >= state.target){
+        clearInterval(state.timer);
+        state.running = false;
+        setTimeout(onComplete, 260);
+      }
+    }, stepMs);
+  }
+
+  function onComplete(){
+    report("completed", state.target);
+    fillTitle.textContent = "Selesai!";
+    fillSub.textContent = "Air sudah siap diminum.";
+    fillActions.innerHTML = "";
+    document.getElementById("doneOverlay").classList.add("show");
+    addBottleSaved();
+    setTimeout(function(){
+      document.getElementById("doneOverlay").classList.remove("show");
+      showView("volume");
+      resetFillUI();
+    }, 2600);
+  }
+
+  // ---- bottles-saved impact counter (persisted per device — a running
+  // total on a real kiosk never resets, this is the closest a browser
+  // prototype can approximate that) ----
+  var BOTTLES_KEY = "banyu_bottles_saved";
+  var bottlesSavedEl = document.getElementById("bottlesSaved");
+  var bottlesSaved = loadBottlesSaved();
+
+  function loadBottlesSaved(){
+    try {
+      var v = parseInt(localStorage.getItem(BOTTLES_KEY), 10);
+      return isNaN(v) ? 0 : v;
+    } catch (e){
+      return 0;
+    }
+  }
+  function persistBottlesSaved(n){
+    try { localStorage.setItem(BOTTLES_KEY, String(n)); } catch (e){ /* ignore */ }
+  }
+  function renderBottlesSaved(){
+    if (bottlesSavedEl) bottlesSavedEl.textContent = bottlesSaved.toLocaleString("id-ID");
+  }
+  function addBottleSaved(){
+    bottlesSaved += 1;
+    persistBottlesSaved(bottlesSaved);
+    renderBottlesSaved();
+  }
+  renderBottlesSaved();
+
+  // ---- manual water-shortage report (backup for the ESP32 auto-detect) ----
+  // Goes through the SAME function the ESP32 path should use, so both end up
+  // in one notification system; only `source` differs.
+  var NOTIFY_ENDPOINT = "/api/alerts";      // TODO: set to your notification API URL, e.g. "https://api.example.com/v1/alerts"
+  var KIOSK_ID = "banyu-kiosk-01"; // TODO: replace with the real device id
+  var REPORT_COOLDOWN_MS = 30000;  // blocks spam taps; tweak or remove as needed
+  var TOAST_MS = 2800;
+
+  var toastEl = document.getElementById("toast");
+  var toastMsg = document.getElementById("toastMsg");
+  var toastIcon = document.getElementById("toastIcon");
+  var toastTimer = null;
+  var ICON_OK  = '<circle cx="12" cy="12" r="9" stroke="#8fd3b0" stroke-width="1.8"/><path d="m8 12.4 2.8 2.8L16.2 9.6" stroke="#8fd3b0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+  var ICON_ERR = '<circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="1.8"/><path d="M12 8v5M12 16.2h.01" stroke="#fff" stroke-width="2" stroke-linecap="round"/>';
+
+  function showToast(message, isError){
+    clearTimeout(toastTimer);
+    toastMsg.textContent = message;
+    toastIcon.innerHTML = isError ? ICON_ERR : ICON_OK;
+    toastEl.classList.toggle("error", !!isError);
+    toastEl.classList.add("show");
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, TOAST_MS);
+  }
+
+  // PLACEHOLDER: replace the body with the real API call once it exists.
+  // Must return a Promise that resolves on success and rejects on failure.
+  function sendShortageNotification(payload){
+    if (NOTIFY_ENDPOINT){
+      return fetch(NOTIFY_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" /* , "Authorization": "Bearer <token>" */ },
+        body: JSON.stringify(payload)
+      }).then(function(res){
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res;
+      });
+    }
+    // No endpoint yet: simulate a short network round-trip.
+    console.log("[Banyu] (placeholder) shortage notification:", payload);
+    return new Promise(function(resolve){ setTimeout(resolve, 400); });
+  }
+
+  var reportBtn = document.getElementById("reportShortageBtn");
+  reportBtn.addEventListener("click", function(){
+    reportBtn.disabled = true;
+    var payload = {
+      type: "water_shortage",
+      source: "manual_button",   // the ESP32 should send "esp32_sensor" through the same endpoint
+      kioskId: KIOSK_ID,
+      timestamp: new Date().toISOString()
+    };
+    sendShortageNotification(payload).then(function(){
+      showToast("Notifikasi terkirim. Tim kami segera mengisi ulang.", false);
+      setTimeout(function(){ reportBtn.disabled = false; }, REPORT_COOLDOWN_MS);
+    }).catch(function(err){
+      console.error("[Banyu] failed to send notification", err);
+      showToast("Gagal mengirim notifikasi. Coba lagi.", true);
+      reportBtn.disabled = false; // let them retry right away on failure
+    });
+  });
+
+  showView("volume");
+})();
+</script>
