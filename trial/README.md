@@ -100,3 +100,79 @@ Shows build, Wi-Fi/RSSI, tank raw/mode/filter, job, flow. If it fails:
 - `db.json` is the only copy of orders (Recipe B syncs it to MongoDB).
 - Midtrans polling only; no webhook. Late payments are recorded and flagged in
   the dashboard, but refunds are manual.
+
+---
+
+# Recipe B — laptop + local cloud copy (MongoDB)
+
+Branch: `trial/recipe-b-cloud`. Same kiosk/ESP path as Recipe A, plus the online
+dashboard + API + MongoDB running **on the same laptop** (or an Atlas database).
+No Vercel account or domain is needed for the trial.
+
+```
+tablet ──> laptop:3000 (kiosk/API) ──HTTP LAN──> ESP32
+                  └── outbound ──> laptop:4000 (cloud API) ──> MongoDB
+                                          └──> online dashboard + Discord (optional)
+```
+
+## Start
+
+```powershell
+cd C:\Users\fitri\Documents\OPENCODE\Banyu-Water-Dispenser-cloud-sync-midtrans
+powershell -ExecutionPolicy Bypass -File .\trial\start-recipe-b.ps1 -EspIp 192.168.1.50
+```
+
+It opens two windows:
+
+| Window | What | URL |
+|---|---|---|
+| kiosk | `banyu/server.js` | `http://localhost:3000/` |
+| cloud | `trial/cloud-dev.js` | `http://localhost:4000/dashboard.html` |
+
+Cloud dashboard login = the first `ADMIN_KEYWORDS` value (default `banyu123`).
+The script adds `CLOUD_URL=http://localhost:4000` and a random `SYNC_SECRET` to
+`banyu/settings.env` if they are empty, then starts both halves.
+
+## MongoDB
+
+- **Default — in-memory:** no install, no account. The first cloud start
+  downloads a ~100 MB MongoDB binary (one time). Data lives until the cloud
+  window is closed.
+- **Persistent — Atlas / local mongod:**
+
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\trial\start-recipe-b.ps1 `
+    -MongoUri "mongodb+srv://user:password@cluster/banyu"
+  ```
+
+  or a local install: `-MongoUri "mongodb://127.0.0.1:27017"`.
+- If the in-memory database is lost, the local `banyu/data/db.json` is the source
+  of truth: the next heartbeat tells the cloud that its counts are lower and the
+  machine re-sends everything (usually within a minute).
+
+## Verify the trial
+
+1. Wait for `Dashboard :` in the cloud window (first run only).
+2. Open both URLs; the local dashboard and the cloud dashboard should both log
+   in with the same keyword.
+3. Create a 300 mL order → mock pay → Start.
+4. The cloud dashboard should show the machine online and the order within
+   ~5–10 s (machine sync = 5 s, heartbeat = 60 s).
+5. Discord messages appear only if `DISCORD_WEBHOOK_URL` is set in the cloud
+   window's environment (optional).
+
+## Recipe A vs B
+
+| | A | B |
+|---|---|---|
+| ESP HTTP control | yes | yes |
+| Kiosk + local dashboard | yes | yes |
+| Online dashboard | — | yes |
+| MongoDB | — | in-memory or Atlas |
+| Discord alerts | — | optional |
+| Accounts/domain | none | none for local trial |
+
+To go back to A after running B, either use the A branch or clear `CLOUD_URL`
+and `SYNC_SECRET` in `banyu/settings.env`. When the customer is ready for
+Vercel + Atlas, deploy this same repo with `SETUP-ONLINE.md` and point
+`CLOUD_URL` at the domain.
